@@ -1,182 +1,130 @@
 const api = (() => {
   const BASE_URL = 'https://openspace-api.netlify.app/v1';
 
-  async function _fetchWithAuth(url, options = {}) {
+  // Fungsi untuk memeriksa status respons
+  const checkStatus = async (response) => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const responseJson = await response.json();
+    const { status, message } = responseJson;
+
+    if (status !== 'success') {
+      throw new Error(message);
+    }
+
+    return responseJson.data;
+  };
+
+  // Fungsi untuk melakukan fetch dengan header Authorization
+  const _fetchWithAuth = async (url, options = {}) => {
+    const token = getAccessToken();
+    if (!token) {
+      throw new Error('No access token found.');
+    }
+
     return fetch(url, {
       ...options,
       headers: {
         ...options.headers,
-        Authorization: `Bearer ${getAccessToken()}`,
+        Authorization: `Bearer ${token}`,
       },
     });
-  }
+  };
 
-  function putAccessToken(token) {
+  // Fungsi untuk menyimpan token di localStorage
+  const putAccessToken = (token) => {
     localStorage.setItem('accessToken', token);
-  }
+  };
 
-  function getAccessToken() {
+  // Fungsi untuk mengambil token dari localStorage
+  const getAccessToken = () => {
     return localStorage.getItem('accessToken');
-  }
+  };
 
-  async function register({ id, name, password }) {
+  // Fungsi untuk melakukan register pengguna
+  const register = async ({ id, name, password }) => {
     const response = await fetch(`${BASE_URL}/users`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        id,
-        name,
-        password,
-      }),
+      body: JSON.stringify({ id, name, password }),
     });
 
-    const responseJson = await response.json();
-    const { status, message } = responseJson;
+    const data = await checkStatus(response);
+    return data.user;
+  };
 
-    if (status !== 'success') {
-      throw new Error(message);
-    }
-
-    const { data: { user } } = responseJson;
-
-    return user;
-  }
-
-  async function login({ id, password }) {
+  // Fungsi untuk melakukan login dan mendapatkan token
+  const login = async ({ id, password }) => {
     const response = await fetch(`${BASE_URL}/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        id,
-        password,
-      }),
+      body: JSON.stringify({ id, password }),
     });
 
-    const responseJson = await response.json();
+    const data = await checkStatus(response);
+    return data.token;
+  };
 
-    const { status, message } = responseJson;
-
-    if (status !== 'success') {
-      throw new Error(message);
-    }
-
-    const { data: { token } } = responseJson;
-
-    return token;
-  }
-
-  async function getOwnProfile() {
+  // Fungsi untuk mengambil profile pengguna yang sedang login
+  const getOwnProfile = async () => {
     const response = await _fetchWithAuth(`${BASE_URL}/users/me`);
+    const data = await checkStatus(response);
+    return data.user;
+  };
 
-    const responseJson = await response.json();
-
-    const { status, message } = responseJson;
-
-    if (status !== 'success') {
-      throw new Error(message);
-    }
-
-    const { data: { user } } = responseJson;
-
-    return user;
-  }
-
-  async function getAllUsers() {
+  // Fungsi untuk mengambil semua pengguna
+  const getAllUsers = async () => {
     const response = await fetch(`${BASE_URL}/users`);
+    const data = await checkStatus(response);
+    return data.users;
+  };
 
-    const responseJson = await response.json();
-
-    const { status, message } = responseJson;
-
-    if (status !== 'success') {
-      throw new Error(message);
-    }
-
-    const { data: { users } } = responseJson;
-
-    return users;
-  }
-
-  async function getAllTalks() {
+  // Fungsi untuk mengambil semua talks
+  const getAllTalks = async () => {
     const response = await fetch(`${BASE_URL}/talks`);
+    const data = await checkStatus(response);
+    return data.talks;
+  };
 
-    const responseJson = await response.json();
-
-    const { status, message } = responseJson;
-
-    if (status !== 'success') {
-      throw new Error(message);
-    }
-
-    const { data: { talks } } = responseJson;
-
-    return talks;
-  }
-
-  async function getTalkDetail(id) {
+  // Fungsi untuk mengambil detail talk berdasarkan ID
+  const getTalkDetail = async (id) => {
     const response = await fetch(`${BASE_URL}/talks/${id}`);
+    const data = await checkStatus(response);
+    return data.talkDetail;
+  };
 
-    const responseJson = await response.json();
-
-    const { status, message } = responseJson;
-
-    if (status !== 'success') {
-      throw new Error(message);
-    }
-
-    const { data: { talkDetail } } = responseJson;
-
-    return talkDetail;
-  }
-
-  async function createTalk({ text, replyTo = '' }) {
+  // Fungsi untuk membuat talk baru
+  const createTalk = async ({ text, replyTo = '' }) => {
     const response = await _fetchWithAuth(`${BASE_URL}/talks`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        text,
-        replyTo,
-      }),
+      body: JSON.stringify({ text, replyTo }),
     });
 
-    const responseJson = await response.json();
+    const data = await checkStatus(response);
+    return data.talk;
+  };
 
-    const { status, message } = responseJson;
-
-    if (status !== 'success') {
-      throw new Error(message);
-    }
-
-    const { data: { talk } } = responseJson;
-
-    return talk;
-  }
-
-  async function toggleLikeTalk(id) {
+  // Fungsi untuk toggle like pada talk
+  const toggleLikeTalk = async (id) => {
     const response = await _fetchWithAuth(`${BASE_URL}/talks/likes`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        talkId: id,
-      }),
+      body: JSON.stringify({ talkId: id }),
     });
 
-    const responseJson = await response.json();
-
-    const { status, message } = responseJson;
-
-    if (status !== 'success') {
-      throw new Error(message);
-    }
-  }
+    await checkStatus(response); // hanya cek status tanpa return data
+  };
 
   return {
     putAccessToken,
