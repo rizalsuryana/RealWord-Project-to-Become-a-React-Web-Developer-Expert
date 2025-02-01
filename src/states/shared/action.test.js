@@ -70,4 +70,26 @@ describe('asyncPopulateUserAndTalks thunk', () => {
     expect(dispatch).toHaveBeenCalledWith(hideLoading());
   });
 
+
+  //   2nd testing ... error simulation
+
+  it('should dispatch action and call alert correctly when data fetching failed', async () => {
+    // arrange
+    // stub implementation
+    api.getAllUsers = () => Promise.reject(fakeErrorResponse);
+    api.getAllTalks = () => Promise.reject(fakeErrorResponse);
+    // mock dispatch
+    const dispatch = vi.fn();
+    window.alert = vi.fn();
+
+    // action
+    await asyncPopulateUsersAndTalks()(dispatch);
+
+    // assert
+    expect(dispatch).toHaveBeenCalledWith(showLoading());
+    expect(dispatch).toHaveBeenCalledWith(hideLoading());
+    expect(window.alert).toHaveBeenCalledWith(fakeErrorResponse.message);
+  });
+
+
 });
