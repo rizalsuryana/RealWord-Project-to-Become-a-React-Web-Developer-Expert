@@ -1,1 +1,1 @@
-It's not main project
+Applying automation testing
